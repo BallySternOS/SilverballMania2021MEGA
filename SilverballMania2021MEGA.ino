@@ -1588,7 +1588,10 @@ inline void StopSoundEffect(byte soundEffectNum) {
 void PlaySoundEffect(byte soundEffectNum, int gain) {
 
   if (MusicLevel == 0) return;
-  if (MusicLevel < 3) PlaySoundEffect51(soundEffectNum);
+  if (MusicLevel < 3) {
+    PlaySoundEffect51(soundEffectNum);
+    return;
+  }
 
 #ifndef USE_WAV_TRIGGER_1p3
   if (  soundEffectNum == SOUND_EFFECT_THUMPER_BUMPER_HIT ||
