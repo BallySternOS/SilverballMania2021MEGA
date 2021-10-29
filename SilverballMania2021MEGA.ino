@@ -13,12 +13,6 @@
 #include "SelfTestAndAudit.h"
 #include <EEPROM.h>
 
-// attract play sound?
-// spell "ball" bug
-// no eb on N hit after clear
-// tell them what to spell after word clear?
-// sfx on extra ball
-
 #define USE_SCORE_OVERRIDES
 
 #if defined(USE_WAV_TRIGGER) || defined(USE_WAV_TRIGGER_1p3)
