@@ -14,8 +14,10 @@
 #include <EEPROM.h>
 
 // attract play sound?
-// Shoot again sounds
 // spell "ball" bug
+// no eb on N hit after clear
+// tell them what to spell after word clear?
+// sfx on extra ball
 
 #define USE_SCORE_OVERRIDES
 
@@ -992,7 +994,9 @@ void AwardSpecial() {
   if (SpecialCollected) return;
   SpecialCollected = true;
   if (TournamentScoring) {
-    CurrentScores[CurrentPlayer] += SpecialValue * ScoreMultiplier;
+    //CurrentScores[CurrentPlayer] += SpecialValue * ScoreMultiplier;
+    StartScoreAnimation(SpecialValue * ScoreMultiplier);
+    PlaySoundEffect(SOUND_EFFECT_SKILL_SHOT);
   } else {
     AddSpecialCredit();
   }
@@ -1002,7 +1006,9 @@ void AwardExtraBall() {
   if (ExtraBallCollected) return;
   ExtraBallCollected = true;
   if (TournamentScoring) {
-    CurrentScores[CurrentPlayer] += ExtraBallValue * ScoreMultiplier;
+    //CurrentScores[CurrentPlayer] += ExtraBallValue * ScoreMultiplier;
+    StartScoreAnimation(ExtraBallValue * ScoreMultiplier);
+    PlaySoundEffect(SOUND_EFFECT_SKILL_SHOT);
   } else {
     SamePlayerShootsAgain = true;
     BSOS_SetLampState(LAMP_SHOOT_AGAIN, SamePlayerShootsAgain);
@@ -1912,11 +1918,16 @@ boolean CheckIfSilverballComplete() {
     } else if (!TournamentScoring) {
       SilverballHeadProgressChanged = CurrentTime + 5000;
     }
-    ExtraBallHurryUp = CurrentTime + 2000 * (unsigned long)(SilverballMode[CurrentPlayer] & 0x0F);
+    ExtraBallHurryUp = CurrentTime + 4000 * (unsigned long)(SilverballMode[CurrentPlayer] & 0x0F);
     AwardLightAnimationEnd = CurrentTime + 1000;
 
     switch (SilverballMode[CurrentPlayer]) {
       case SILVERBALL_MODE_WORD_GROUPS:
+        if (DEBUG_MESSAGES) {
+          char buf[80]; 
+          sprintf(buf, "Notification from CheckIfSilverballComplete()\n");
+          Serial.write(buf);        
+        }
         QueueNotification(SOUND_EFFECT_SPELL_SILVER, 0);
         break;
       default:
@@ -2003,13 +2014,20 @@ void HandleSilverballHit(byte switchNum) {
     byte switchWordNum = 0;
     if (letterNum > 5) switchWordNum = 1;
     if (letterNum > 9) switchWordNum = 2;
-    byte currentWord = GetCurrentSilverballWord();
+    CurrentSilverballWord = GetCurrentSilverballWord();
 
-    if (switchWordNum == currentWord && (SilverballStatus[CurrentPlayer][letterNum] & 0x0F) < SILVERBALL_MODE_WORD_GROUPS) {
+    if ((switchWordNum == CurrentSilverballWord) && (SilverballStatus[CurrentPlayer][letterNum] & 0x0F) < SILVERBALL_MODE_WORD_GROUPS) {
       TurnOnSilverballLetter(letterNum);
       shotAwarded = true;
       CurrentScores[CurrentPlayer] += 1000 * ScoreMultiplier;
       if (letterNum == 10 || letterNum == 14) SetKickerStatus(true, 5000);
+
+      byte lastSilverballWord = CurrentSilverballWord;
+      CurrentSilverballWord = GetCurrentSilverballWord();
+      if (CurrentSilverballWord>lastSilverballWord) {
+        QueueNotification(SOUND_EFFECT_SPELL_SILVER + CurrentSilverballWord, 0);
+      }
+
     }
   } else if (SilverballMode[CurrentPlayer] >= SILVERBALL_MODE_FADEAWAY_LETTERS) {
     // See if this letter can be collected, or if it's provisional
@@ -2043,7 +2061,7 @@ void HandleSilverballHit(byte switchNum) {
     AwardLightAnimationEnd = CurrentTime + 1500;
   }
 
-  if (switchNum == SW_CENTER_TARGET && ExtraBallHurryUp && CurrentTime < ExtraBallHurryUp) {
+  if (switchNum == SW_CENTER_TARGET && ExtraBallHurryUp) {
     ExtraBallHurryUp = 0;
     AwardExtraBall();
     shotAwarded = true;
@@ -2061,8 +2079,6 @@ void HandleSilverballHit(byte switchNum) {
   if (CheckIfSilverballComplete()) {
     shotAwarded = true;
   }
-
-  CurrentSilverballWord = GetCurrentSilverballWord();
 
   if (!shotAwarded) {
     CurrentScores[CurrentPlayer] += 100 * ScoreMultiplier;
@@ -2385,6 +2401,11 @@ int ManageGameMode() {
             QueueNotification(SOUND_EFFECT_SPELL_SBM, 0);
             break;
           case SILVERBALL_MODE_WORD_GROUPS:
+            if (DEBUG_MESSAGES) {
+              char buf[80]; 
+              sprintf(buf, "Notification from unstructured play()\n");
+              Serial.write(buf);        
+            }
             QueueNotification(SOUND_EFFECT_SPELL_SILVER + CurrentSilverballWord, 0);
             break;
           default:
