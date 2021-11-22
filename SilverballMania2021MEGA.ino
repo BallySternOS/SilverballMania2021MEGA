@@ -22,7 +22,7 @@ SendOnlyWavTrigger wTrig;             // Our WAV Trigger object
 
 #define PINBALL_MACHINE_BASE_MAJOR_VERSION  2021
 #define PINBALL_MACHINE_BASE_MINOR_VERSION  1
-#define DEBUG_MESSAGES  0
+#define DEBUG_MESSAGES  1
 
 
 
@@ -371,6 +371,7 @@ void ReadStoredParameters() {
 void setup() {
   if (DEBUG_MESSAGES) {
     Serial.begin(57600);
+    Serial.write("Setup begins\n");
   }
 
   // Tell the OS about game-specific lights and switches
@@ -380,6 +381,10 @@ void setup() {
   BSOS_InitializeMPU();
   BSOS_DisableSolenoidStack();
   BSOS_SetDisableFlippers(true);
+
+  if (DEBUG_MESSAGES) {
+    Serial.write("MPU has been initialized\n");
+  }
 
   // Read parameters from EEProm
   ReadStoredParameters();
@@ -1589,7 +1594,9 @@ void PlaySoundEffect(byte soundEffectNum, int gain) {
 
   if (MusicLevel == 0) return;
   if (MusicLevel < 3) {
+#ifdef BALLY_STERN_OS_USE_DASH51
     PlaySoundEffect51(soundEffectNum);
+#endif
     return;
   }
 
@@ -3064,6 +3071,9 @@ int RunGamePlayMode(int curState, boolean curStateChanged) {
 }
 
 
+unsigned long NumLoops = 0;
+unsigned long LastLoopReportTime = 0;
+
 void loop() {
 
   BSOS_DataRead(0);
@@ -3099,5 +3109,16 @@ void loop() {
 
   BSOS_ApplyFlashToLamps(CurrentTime);
   BSOS_UpdateTimedSolenoidStack(CurrentTime);
+
+  if (DEBUG_MESSAGES) {
+    NumLoops += 1;
+    if (CurrentTime>(LastLoopReportTime+1000)) {
+      LastLoopReportTime = CurrentTime;
+      char buf[128];
+      sprintf(buf, "Loop running at %lu Hz\n", NumLoops);
+      Serial.write(buf);
+      NumLoops = 0;
+    }
+  }
 
 }
