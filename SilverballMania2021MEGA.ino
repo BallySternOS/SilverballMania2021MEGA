@@ -2866,7 +2866,6 @@ int RunGamePlayMode(int curState, boolean curStateChanged) {
         case SW_TOP_RIGHT_ROLLOVER:
         case SW_TOP_LEFT_ROLLOVER:
           if (GameMode == GAME_MODE_SKILL_SHOT && ToplanePhase == 1) {
-            SpotSilverballLetter();
             PlaySoundEffect(SOUND_EFFECT_SKILL_SHOT);
             StartScoreAnimation(10000 * ScoreMultiplier);
           } else {
