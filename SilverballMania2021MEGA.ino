@@ -1011,7 +1011,6 @@ void AwardExtraBall() {
   } else {
     SamePlayerShootsAgain = true;
     BSOS_SetLampState(LAMP_SHOOT_AGAIN, SamePlayerShootsAgain);
-    StopAudio();
     PlaySoundEffect(SOUND_EFFECT_EXTRA_BALL);
   }
 }
@@ -2848,6 +2847,7 @@ int RunGamePlayMode(int curState, boolean curStateChanged) {
             LastTiltWarningTime = CurrentTime;
             NumTiltWarnings += 1;
             if (NumTiltWarnings > MaxTiltWarnings) {
+              BSOS_PushToTimedSolenoidStack(SOL_KICKBACK_ARM, 6, CurrentTime, true);
               BSOS_DisableSolenoidStack();
               BSOS_SetDisableFlippers(true);
               BSOS_TurnOffAllLamps();
@@ -2866,7 +2866,6 @@ int RunGamePlayMode(int curState, boolean curStateChanged) {
         case SW_TOP_RIGHT_ROLLOVER:
         case SW_TOP_LEFT_ROLLOVER:
           if (GameMode == GAME_MODE_SKILL_SHOT && ToplanePhase == 1) {
-            SpotSilverballLetter();
             PlaySoundEffect(SOUND_EFFECT_SKILL_SHOT);
             StartScoreAnimation(10000 * ScoreMultiplier);
           } else {
